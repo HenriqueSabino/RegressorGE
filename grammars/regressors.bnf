@@ -1,0 +1,4 @@
+<rede> ::= <linear>;<nlinear>
+<linear> ::= arima | sarima | ets
+<nlinear> ::= <nlinear_model> | <nlinear_model>,<nlinear>
+<nlinear_model> ::= svm | mlp | lstm | cnn
