@@ -10,3 +10,4 @@ TOURNAMENT_SIZE:        2
 ELITE_SIZE:  		    1
 SELECTION:              nsga2_selection
 REPLACEMENT:            nsga2_replacement
+DATASET_NAME:           ../../datasets/data.xlsx
