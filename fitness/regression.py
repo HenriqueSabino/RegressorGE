@@ -111,23 +111,29 @@ class regression(base_ff):
 
     def build_model(self, phenotype):
         self.load_data()
-        model = {"linear":{},"nlinear":{}}
-        pesos = 1
-
+        model = {"linear": {}, "nlinear": {}}
         print(phenotype)
 
-        model_parts = phenotype.split(';')
-        linear = model_parts[0]
-        nlinear = model_parts[1]
+        linear, nlinear = phenotype.split(';')
 
-        model["linear"][linear] = pesos
+        linear_model, weight = self.extract_weights_and_model(linear)
+        model["linear"][linear_model] = weight
 
         nlinear_parts = nlinear.split(',')
 
         for i in range(len(nlinear_parts)):
-            model["nlinear"][nlinear_parts[i]] = pesos
+            nlinear_model, weight = self.extract_weights_and_model(
+                nlinear_parts[i])
+            model["nlinear"][nlinear_model] = weight
 
         return model
+
+    def extract_weights_and_model(self, input):
+        parts = input.split(':')
+        avg, std = [float(x) for x in parts[0].split('~')]
+        model = parts[1]
+
+        return model, np.random.normal(loc=avg, scale=std)
 
     def train_model(self, model):
         pass
