@@ -5,6 +5,7 @@ from sewar.full_ref import mse
 from openpyxl import load_workbook
 import numpy as np
 
+
 class regression(base_ff):
 
     maximise = False
@@ -24,7 +25,7 @@ class regression(base_ff):
         accuracy, accuracy_sd, f1_score, f1_score_sd = None, None, None, None
 
         r = requests.get(params['METRICS_URL'], params={
-            'dataset': params['DATASET_NAME'],
+            'dataset': params['DATASET_PATH'],
             'phenotype': phenotype,
         })
         data = r.json()
@@ -40,7 +41,7 @@ class regression(base_ff):
 
     def save_metrics(self, phenotype, accuracy, accuracy_sd, f1_score, f1_score_sd):
         data = {
-            'dataset': params['DATASET_NAME'],
+            'dataset': params['DATASET_PATH'],
             'phenotype': phenotype,
             'accuracy': accuracy,
             'accuracy_sd': accuracy_sd,
@@ -50,41 +51,43 @@ class regression(base_ff):
         requests.post(params['METRICS_URL'], json=data)
 
     def load_data(self):
-        wb = load_workbook(params['DATASET_NAME'])
-        dataset_name = ["REDWINE","SUNSPOT","B1H","POLLUTION","GAS","LAKEERIE","Electricity","PIGS","Nordic","CARSALES"]
+        wb = load_workbook(params['DATASET_PATH'])
+        dataset_name = ["REDWINE", "SUNSPOT", "B1H", "POLLUTION", "GAS",
+                        "LAKEERIE", "Electricity", "PIGS", "Nordic", "CARSALES"]
         dataset = {}
         for name in dataset_name:
 
             ws = wb[name]
-            columns = [ws["A"],ws["B"],ws["C"],ws["D"],ws["E"],ws["F"],ws["G"]]
+            columns = [ws["A"], ws["B"], ws["C"],
+                       ws["D"], ws["E"], ws["F"], ws["G"]]
 
             sheet = [[] for _ in range(len(columns[0]))]
 
             for c in columns:
-                for index,item in enumerate(c):
+                for index, item in enumerate(c):
                     sheet[index].append(item.value)
 
             sheet = np.array(sheet)
-            dataset[name] = {"raw":sheet}
+            dataset[name] = {"raw": sheet}
 
-        for name,data in dataset.items():
+        for name, data in dataset.items():
             sheet = dataset[name]["raw"]
 
-            dataset[name]["series"] = {"treino":[],"teste":[]}
-            dataset[name]["arima"] = {"treino":[],"teste":[]}
-            dataset[name]["mlp"] = {"treino":[],"teste":[]}
-            dataset[name]["srv"] = {"treino":[],"teste":[]}
-            dataset[name]["rbf"] = {"treino":[],"teste":[]}
+            dataset[name]["series"] = {"treino": [], "teste": []}
+            dataset[name]["arima"] = {"treino": [], "teste": []}
+            dataset[name]["mlp"] = {"treino": [], "teste": []}
+            dataset[name]["srv"] = {"treino": [], "teste": []}
+            dataset[name]["rbf"] = {"treino": [], "teste": []}
 
             for row in sheet[1:]:
                 split_type = row[2]
-                if row[4]==None:
+                if row[4] == None:
                     continue
-                key=None
+                key = None
                 if split_type == "Teste":
-                    key="teste"
+                    key = "teste"
                 elif split_type == "Validacao":
-                    key="treino"
+                    key = "treino"
                 else:
                     continue
 
@@ -94,20 +97,29 @@ class regression(base_ff):
                 dataset[name]["srv"][key].append(float(row[5]))
                 dataset[name]["rbf"][key].append(float(row[6]))
 
-            dataset[name]["series"]["treino"]=np.array(dataset[name]["series"]["treino"])
-            dataset[name]["arima"]["treino"]=np.array(dataset[name]["arima"]["treino"])
-            dataset[name]["mlp"]["treino"]=np.array(dataset[name]["mlp"]["treino"])
-            dataset[name]["srv"]["treino"]=np.array(dataset[name]["srv"]["treino"])
-            dataset[name]["rbf"]["treino"]=np.array(dataset[name]["rbf"]["treino"])
+            dataset[name]["series"]["treino"] = np.array(
+                dataset[name]["series"]["treino"])
+            dataset[name]["arima"]["treino"] = np.array(
+                dataset[name]["arima"]["treino"])
+            dataset[name]["mlp"]["treino"] = np.array(
+                dataset[name]["mlp"]["treino"])
+            dataset[name]["srv"]["treino"] = np.array(
+                dataset[name]["srv"]["treino"])
+            dataset[name]["rbf"]["treino"] = np.array(
+                dataset[name]["rbf"]["treino"])
 
+            dataset[name]["series"]["teste"] = np.array(
+                dataset[name]["series"]["teste"])
+            dataset[name]["arima"]["teste"] = np.array(
+                dataset[name]["arima"]["teste"])
+            dataset[name]["mlp"]["teste"] = np.array(
+                dataset[name]["mlp"]["teste"])
+            dataset[name]["srv"]["teste"] = np.array(
+                dataset[name]["srv"]["teste"])
+            dataset[name]["rbf"]["teste"] = np.array(
+                dataset[name]["rbf"]["teste"])
 
-            dataset[name]["series"]["teste"]=np.array(dataset[name]["series"]["teste"])
-            dataset[name]["arima"]["teste"]=np.array(dataset[name]["arima"]["teste"])
-            dataset[name]["mlp"]["teste"]=np.array(dataset[name]["mlp"]["teste"])
-            dataset[name]["srv"]["teste"]=np.array(dataset[name]["srv"]["teste"])
-            dataset[name]["rbf"]["teste"]=np.array(dataset[name]["rbf"]["teste"])
-
-        self.dataset = dataset["REDWINE"]
+        self.dataset = dataset[params['DATASET_NAME']]
 
     def build_model(self, phenotype):
         self.load_data()
@@ -116,30 +128,22 @@ class regression(base_ff):
 
         linear, nlinear = phenotype.split(';')
 
-        linear_model, weight = self.extract_weights_and_model(linear)
-        model["linear"][linear_model] = weight
+        weight, linear_model = linear.split(':')
+        model["linear"][linear_model] = float(weight)
 
         nlinear_parts = nlinear.split(',')
 
         for i in range(len(nlinear_parts)):
-            nlinear_model, weight = self.extract_weights_and_model(
-                nlinear_parts[i])
-            model["nlinear"][nlinear_model] = weight
+            weight, nlinear_model = nlinear_parts[i].split(':')
+            model["nlinear"][nlinear_model] = float(weight)
 
         return model
-
-    def extract_weights_and_model(self, input):
-        parts = input.split(':')
-        avg, std = [float(x) for x in parts[0].split('~')]
-        model = parts[1]
-
-        return model, np.random.normal(loc=avg, scale=std)
 
     def train_model(self, model):
         pass
 
     def evaluate(self, ind, **kwargs):
-        #self.load_data()
+        # self.load_data()
         # accuracy, accuracy_sd, f1_score, f1_score_sd = self.get_metrics(ind.phenotype)
 
         # if accuracy is None and f1_score is None:
@@ -147,16 +151,14 @@ class regression(base_ff):
         print(model)
         predict = np.zeros(len(self.dataset["arima"]["teste"]))
 
-        for key,val in model["linear"].items():
-            predict += self.dataset[key]["teste"] * val
-        
-        for key,val in model["nlinear"].items():
-
+        for key, val in model["linear"].items():
             predict += self.dataset[key]["teste"] * val
 
-        
-        return mse(self.dataset['series']['teste'],predict) , 0
+        for key, val in model["nlinear"].items():
 
+            predict += self.dataset[key]["teste"] * val
+
+        return mse(self.dataset['series']['teste'], predict), 0
 
         # accuracy, accuracy_sd, f1_score, f1_score_sd = self.train_model(model)
         # self.save_metrics(ind.phenotype, accuracy, accuracy_sd, f1_score, f1_score_sd)

@@ -1,7 +1,7 @@
 GRAMMAR_FILE:           ../../grammars/regressors.bnf
 FITNESS_FUNCTION:       regression
 INITIALISATION:         uniform_genome
-GENERATIONS:            30
+GENERATIONS:            50
 POPULATION_SIZE:        50
 CROSSOVER_PROBABILITY:  0.75
 MUTATION:               int_flip_per_codon
@@ -10,4 +10,5 @@ TOURNAMENT_SIZE:        2
 ELITE_SIZE:  		    1
 SELECTION:              nsga2_selection
 REPLACEMENT:            nsga2_replacement
-DATASET_NAME:           ../../datasets/data.xlsx
+DATASET_PATH:           ../../datasets/data.xlsx
+DATASET_NAME:           B1H

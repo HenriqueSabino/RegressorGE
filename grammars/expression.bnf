@@ -1,5 +1,4 @@
 # Grammar for simple math expressions
-<expression> ::= <number> | <number> <operation> <number> 
+<float> ::= <number>.<number>
 <number> ::= <digit> | <digit><number>
 <digit> ::= 0|1|2|3|4|5|6|7|8|9
-<operation> ::= +|-
