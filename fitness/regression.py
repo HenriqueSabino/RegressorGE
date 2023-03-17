@@ -76,7 +76,7 @@ class regression(base_ff):
             dataset[name]["series"] = {"treino": [], "teste": []}
             dataset[name]["arima"] = {"treino": [], "teste": []}
             dataset[name]["mlp"] = {"treino": [], "teste": []}
-            dataset[name]["srv"] = {"treino": [], "teste": []}
+            dataset[name]["svr"] = {"treino": [], "teste": []}
             dataset[name]["rbf"] = {"treino": [], "teste": []}
 
             for row in sheet[1:]:
@@ -94,7 +94,7 @@ class regression(base_ff):
                 dataset[name]["series"][key].append(float(row[1]))
                 dataset[name]["arima"][key].append(float(row[3]))
                 dataset[name]["mlp"][key].append(float(row[4]))
-                dataset[name]["srv"][key].append(float(row[5]))
+                dataset[name]["svr"][key].append(float(row[5]))
                 dataset[name]["rbf"][key].append(float(row[6]))
 
             dataset[name]["series"]["treino"] = np.array(
@@ -103,8 +103,8 @@ class regression(base_ff):
                 dataset[name]["arima"]["treino"])
             dataset[name]["mlp"]["treino"] = np.array(
                 dataset[name]["mlp"]["treino"])
-            dataset[name]["srv"]["treino"] = np.array(
-                dataset[name]["srv"]["treino"])
+            dataset[name]["svr"]["treino"] = np.array(
+                dataset[name]["svr"]["treino"])
             dataset[name]["rbf"]["treino"] = np.array(
                 dataset[name]["rbf"]["treino"])
 
@@ -114,8 +114,8 @@ class regression(base_ff):
                 dataset[name]["arima"]["teste"])
             dataset[name]["mlp"]["teste"] = np.array(
                 dataset[name]["mlp"]["teste"])
-            dataset[name]["srv"]["teste"] = np.array(
-                dataset[name]["srv"]["teste"])
+            dataset[name]["svr"]["teste"] = np.array(
+                dataset[name]["svr"]["teste"])
             dataset[name]["rbf"]["teste"] = np.array(
                 dataset[name]["rbf"]["teste"])
 
@@ -148,7 +148,6 @@ class regression(base_ff):
 
         # if accuracy is None and f1_score is None:
         model = self.build_model(ind.phenotype)
-        print(model)
         predict = np.zeros(len(self.dataset["arima"]["teste"]))
 
         for key, val in model["linear"].items():
