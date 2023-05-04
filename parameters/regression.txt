@@ -7,8 +7,11 @@ CROSSOVER_PROBABILITY:  0.75
 MUTATION:               int_flip_per_codon
 MUTATION_PROBABILITY:   0.1
 ELITE_SIZE:  		    1
-SELECTION:              tournament
+SELECTION:              nsga2_selection
+CACHE                   True
+MUTATE_DUPLICATES       True
+MULTICORE               True
 TOURNAMENT_SIZE:        2
-REPLACEMENT:            generational
+REPLACEMENT:            nsga2_replacement
 DATASET_PATH:           ../../datasets/data.xlsx
 DATASET_NAME:           B1H

@@ -4,6 +4,9 @@ import requests
 from sewar.full_ref import mse
 from openpyxl import load_workbook
 import numpy as np
+import torch
+import torch.nn.functional as F
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def extremeVal(reference, val):
@@ -15,9 +18,18 @@ def extremeVal(reference, val):
 
 class regression(base_ff):
 
+    maximise = False
+    multi_objective = True
+
     def __init__(self):
         # Initialise base fitness function class.
         super().__init__()
+
+        self.num_obj = 2
+        dummyfit = base_ff()
+        dummyfit.maximise = False
+        self.fitness_functions = [dummyfit, dummyfit]
+        self.default_fitness = [float('nan'), float('nan')]
         self.load_data()
 
     def get_metrics(self, phenotype):
@@ -150,14 +162,17 @@ class regression(base_ff):
         name = list(model["linear"].keys())[0]
         predict = np.zeros(len(self.dataset[name][series_name]))
 
-        for key, val in model["linear"].items():
-            predict += self.dataset[key][series_name] * val
+        X_train = self.apply_window(
+            10, "treino", model_names=model["nlinear"].keys())
 
-        for key, val in model["nlinear"].items():
+        kernel = []
+        for _, val in model["linear"].items():
+            kernel.append(val)
 
-            predict += self.dataset[key][series_name] * val
+        for _, val in model["nlinear"].items():
+            kernel.append(val)
 
-        return mse(self.dataset["series"][series_name], predict)
+        return mse(self.create_prediction(X_train, kernel), predict)
 
     def evaluate(self, ind, **kwargs):
         model = self.build_model(ind.phenotype)
@@ -166,7 +181,66 @@ class regression(base_ff):
 
         # if (train_mse - validation_mse) < 0:
         #     return train_mse * 10
-        if (train_mse - validation_mse) > 0:
-            return 0.1 * train_mse
+        # if (train_mse - validation_mse) > 0:
+        #     return 0.1 * train_mse
 
-        return train_mse
+        return [train_mse, validation_mse]
+
+    def make_model_name(models):
+        name = ""
+        for i, n in enumerate(models):
+            name += (n)
+            if i < (len(models)-1):
+                name += "+"
+        return name
+
+    def apply_window(self, window_size, data_type, model_names=None):
+
+        size_pred = len(self.dataset["series"][data_type])
+        new_data = []
+
+        for w in range(window_size):
+            linear = np.concatenate(
+                [np.zeros(w), self.dataset["arima"][data_type]])
+            linear = linear[:size_pred]
+            row = np.array(linear)
+            for model_name in model_names:
+                nonlinear = np.concatenate(
+                    [np.zeros(w), self.dataset[model_name][data_type]])
+                nonlinear = nonlinear[:size_pred]
+                row = np.column_stack([row, nonlinear])
+
+            if len(new_data) == 0:
+                new_data = row
+            else:
+                new_data = np.column_stack([new_data, row])
+
+        return np.array(new_data)
+
+    def create_prediction(X, kernel):
+
+        X = torch.tensor(np.expand_dims(X, axis=(0, 1))).float()
+        kernel = torch.tensor(np.expand_dims(kernel, axis=(0, 1))).float()
+
+        X.to(device)
+        kernel.to(device)
+
+        result = F.conv2d(X, kernel, stride=1, padding=0)
+        return result.numpy().squeeze().astype("f")
+
+    @staticmethod
+    def value(fitness_vector, objective_index):
+        """
+        This is a static method required by NSGA-II for sorting populations
+        based on a given fitness function, or for returning a given index of a
+        population based on a given fitness function.
+
+        :param fitness_vector: A vector/list of fitnesses.
+        :param objective_index: The index of the desired fitness.
+        :return: The fitness at the objective index of the fitness vector.
+        """
+
+        if not isinstance(fitness_vector, list):
+            return float("inf")
+
+        return fitness_vector[objective_index]
