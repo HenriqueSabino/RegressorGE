@@ -1,8 +1,5 @@
-<rede> ::= <linear>;<nlinear>
-<linear> ::= <float>:<linear_model>
-<linear_model> ::= arima
-<nlinear> ::= <float>:<nlinear_model> | <float>:<nlinear_model>,<nlinear>
+<rede> ::= <float>:arima;<float>:<nlinear_model> | <rede>,<float>:<nlinear_model>
 <nlinear_model> ::= svr | mlp | rbf
-<float> ::= <number>.<number>
+<float> ::= <number> | <number>.<number>
 <number> ::= <digit> | <digit><number>
 <digit> ::= 0|1|2|3|4|5|6|7|8|9

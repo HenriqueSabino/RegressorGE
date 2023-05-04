@@ -6,19 +6,19 @@ from openpyxl import load_workbook
 import numpy as np
 
 
-class regression(base_ff):
+def extremeVal(reference, val):
+    if (val > 1e2*reference) or (val < -1e2*reference):
+        return 0
+    else:
+        return val
 
-    maximise = False
-    multi_objective = True
+
+class regression(base_ff):
 
     def __init__(self):
         # Initialise base fitness function class.
         super().__init__()
-        self.num_obj = 2
-        fit = base_ff()
-        fit.maximise = False
-        self.fitness_functions = [fit, fit]
-        self.default_fitness = [float('nan'), float('nan')]
+        self.load_data()
 
     def get_metrics(self, phenotype):
 
@@ -51,9 +51,9 @@ class regression(base_ff):
         requests.post(params['METRICS_URL'], json=data)
 
     def load_data(self):
+        print(f"DATASET_NAME: {params['DATASET_NAME']}")
         wb = load_workbook(params['DATASET_PATH'])
-        dataset_name = ["REDWINE", "SUNSPOT", "B1H", "POLLUTION", "GAS",
-                        "LAKEERIE", "Electricity", "PIGS", "Nordic", "CARSALES"]
+        dataset_name = [params["DATASET_NAME"]]
         dataset = {}
         for name in dataset_name:
 
@@ -70,14 +70,16 @@ class regression(base_ff):
             sheet = np.array(sheet)
             dataset[name] = {"raw": sheet}
 
-        for name, data in dataset.items():
+        for name, _ in dataset.items():
             sheet = dataset[name]["raw"]
 
-            dataset[name]["series"] = {"treino": [], "teste": []}
-            dataset[name]["arima"] = {"treino": [], "teste": []}
-            dataset[name]["mlp"] = {"treino": [], "teste": []}
-            dataset[name]["svr"] = {"treino": [], "teste": []}
-            dataset[name]["rbf"] = {"treino": [], "teste": []}
+            dataset[name]["series"] = {
+                "treino": [], "teste": [], "validacao": []}
+            dataset[name]["arima"] = {
+                "treino": [], "teste": [], "validacao": []}
+            dataset[name]["mlp"] = {"treino": [], "teste": [], "validacao": []}
+            dataset[name]["svr"] = {"treino": [], "teste": [], "validacao": []}
+            dataset[name]["rbf"] = {"treino": [], "teste": [], "validacao": []}
 
             for row in sheet[1:]:
                 split_type = row[2]
@@ -87,44 +89,49 @@ class regression(base_ff):
                 if split_type == "Teste":
                     key = "teste"
                 elif split_type == "Validacao":
+                    key = "validacao"
+                elif split_type == "Treinamento":
                     key = "treino"
                 else:
                     continue
 
                 dataset[name]["series"][key].append(float(row[1]))
-                dataset[name]["arima"][key].append(float(row[3]))
-                dataset[name]["mlp"][key].append(float(row[4]))
-                dataset[name]["svr"][key].append(float(row[5]))
-                dataset[name]["rbf"][key].append(float(row[6]))
+                dataset[name]["arima"][key] .append(float(row[3]))
+                dataset[name]["mlp"][key]   .append(float(row[4]))
+                dataset[name]["svr"][key]   .append(float(row[5]))
+                dataset[name]["rbf"][key]   .append(float(row[6]))
 
-            dataset[name]["series"]["treino"] = np.array(
-                dataset[name]["series"]["treino"])
-            dataset[name]["arima"]["treino"] = np.array(
-                dataset[name]["arima"]["treino"])
-            dataset[name]["mlp"]["treino"] = np.array(
-                dataset[name]["mlp"]["treino"])
-            dataset[name]["svr"]["treino"] = np.array(
-                dataset[name]["svr"]["treino"])
-            dataset[name]["rbf"]["treino"] = np.array(
-                dataset[name]["rbf"]["treino"])
+            for type_data in ["teste", "treino", "validacao"]:
+                dataset[name]["series"][type_data] = np.array(
+                    dataset[name]["series"][type_data])
+                dataset[name]["arima"][type_data] = np.array(
+                    dataset[name]["arima"][type_data])
+                dataset[name]["mlp"][type_data] = np.array(
+                    dataset[name]["mlp"][type_data])
+                dataset[name]["svr"][type_data] = np.array(
+                    dataset[name]["svr"][type_data])
+                dataset[name]["rbf"][type_data] = np.array(
+                    dataset[name]["rbf"][type_data])
 
-            dataset[name]["series"]["teste"] = np.array(
-                dataset[name]["series"]["teste"])
-            dataset[name]["arima"]["teste"] = np.array(
-                dataset[name]["arima"]["teste"])
-            dataset[name]["mlp"]["teste"] = np.array(
-                dataset[name]["mlp"]["teste"])
-            dataset[name]["svr"]["teste"] = np.array(
-                dataset[name]["svr"]["teste"])
-            dataset[name]["rbf"]["teste"] = np.array(
-                dataset[name]["rbf"]["teste"])
+        fixExtreme = np.vectorize(extremeVal)
+
+        for name in dataset.keys():
+            reference = np.max(dataset[name]["series"]["treino"])
+
+            for type_data in ["teste", "treino", "validacao"]:
+                dataset[name]["mlp"][type_data] = fixExtreme(
+                    reference, dataset[name]["mlp"][type_data])
+                dataset[name]["svr"][type_data] = fixExtreme(
+                    reference, dataset[name]["svr"][type_data])
+                dataset[name]["rbf"][type_data] = fixExtreme(
+                    reference, dataset[name]["rbf"][type_data])
+                dataset[name]["arima"][type_data] = fixExtreme(
+                    reference, dataset[name]["arima"][type_data])
 
         self.dataset = dataset[params['DATASET_NAME']]
 
     def build_model(self, phenotype):
-        self.load_data()
         model = {"linear": {}, "nlinear": {}}
-        print(phenotype)
 
         linear, nlinear = phenotype.split(';')
 
@@ -139,43 +146,27 @@ class regression(base_ff):
 
         return model
 
-    def train_model(self, model):
-        pass
-
-    def evaluate(self, ind, **kwargs):
-        # self.load_data()
-        # accuracy, accuracy_sd, f1_score, f1_score_sd = self.get_metrics(ind.phenotype)
-
-        # if accuracy is None and f1_score is None:
-        model = self.build_model(ind.phenotype)
-        predict = np.zeros(len(self.dataset["arima"]["teste"]))
+    def predict_mse(self, model, series_name):
+        name = list(model["linear"].keys())[0]
+        predict = np.zeros(len(self.dataset[name][series_name]))
 
         for key, val in model["linear"].items():
-            predict += self.dataset[key]["teste"] * val
+            predict += self.dataset[key][series_name] * val
 
         for key, val in model["nlinear"].items():
 
-            predict += self.dataset[key]["teste"] * val
+            predict += self.dataset[key][series_name] * val
 
-        return mse(self.dataset['series']['teste'], predict), 0
+        return mse(self.dataset["series"][series_name], predict)
 
-        # accuracy, accuracy_sd, f1_score, f1_score_sd = self.train_model(model)
-        # self.save_metrics(ind.phenotype, accuracy, accuracy_sd, f1_score, f1_score_sd)
+    def evaluate(self, ind, **kwargs):
+        model = self.build_model(ind.phenotype)
+        train_mse = self.predict_mse(model, "treino")
+        validation_mse = self.predict_mse(model, "validacao")
 
-        return model
+        # if (train_mse - validation_mse) < 0:
+        #     return train_mse * 10
+        if (train_mse - validation_mse) > 0:
+            return 0.1 * train_mse
 
-    @staticmethod
-    def value(fitness_vector, objective_index):
-        """
-        This is a static method required by NSGA-II for sorting populations
-        based on a given fitness function, or for returning a given index of a
-        population based on a given fitness function.
-        :param fitness_vector: A vector/list of fitnesses.
-        :param objective_index: The index of the desired fitness.
-        :return: The fitness at the objective index of the fitness vecror.
-        """
-
-        if not isinstance(fitness_vector, list):
-            return float("inf")
-
-        return fitness_vector[objective_index]
+        return train_mse
