@@ -18,18 +18,18 @@ def extremeVal(reference, val):
 
 class regression(base_ff):
 
-    maximise = False
-    multi_objective = True
+    # maximise = False
+    # multi_objective = True
 
     def __init__(self):
         # Initialise base fitness function class.
         super().__init__()
 
-        self.num_obj = 2
-        dummyfit = base_ff()
-        dummyfit.maximise = False
-        self.fitness_functions = [dummyfit, dummyfit]
-        self.default_fitness = [float('nan'), float('nan')]
+        # self.num_obj = 2
+        # dummyfit = base_ff()
+        # dummyfit.maximise = False
+        # self.fitness_functions = [dummyfit, dummyfit]
+        # self.default_fitness = [float('nan'), float('nan')]
         self.load_data()
 
     def get_metrics(self, phenotype):
@@ -154,45 +154,42 @@ class regression(base_ff):
 
         for i in range(len(nlinear_parts)):
             weight, nlinear_model = nlinear_parts[i].split(':')
-            model["nlinear"][nlinear_model] = float(weight)
+
+            if nlinear_model in model["nlinear"]:
+                model["nlinear"][nlinear_model] += float(weight)
+            else:
+                model["nlinear"][nlinear_model] = float(weight)
 
         return model
 
     def predict_mse(self, model, series_name):
-        name = list(model["linear"].keys())[0]
-        predict = np.zeros(len(self.dataset[name][series_name]))
+        predict = self.dataset["series"]["treino"]
 
+        window_size = 1
         X_train = self.apply_window(
-            10, "treino", model_names=model["nlinear"].keys())
+            window_size, "treino", model_names=model["nlinear"].keys())
 
         kernel = []
-        for _, val in model["linear"].items():
-            kernel.append(val)
+        for _ in range(window_size):
+            for _, val in model["linear"].items():
+                kernel.append(val)
 
-        for _, val in model["nlinear"].items():
-            kernel.append(val)
+            for _, val in model["nlinear"].items():
+                kernel.append(val)
 
-        return mse(self.create_prediction(X_train, kernel), predict)
+        return mse(self.create_prediction(X_train, np.reshape(kernel, (1, -1))), predict)
 
     def evaluate(self, ind, **kwargs):
         model = self.build_model(ind.phenotype)
         train_mse = self.predict_mse(model, "treino")
-        validation_mse = self.predict_mse(model, "validacao")
+        # validation_mse = self.predict_mse(model, "validacao")
 
         # if (train_mse - validation_mse) < 0:
         #     return train_mse * 10
         # if (train_mse - validation_mse) > 0:
         #     return 0.1 * train_mse
 
-        return [train_mse, validation_mse]
-
-    def make_model_name(models):
-        name = ""
-        for i, n in enumerate(models):
-            name += (n)
-            if i < (len(models)-1):
-                name += "+"
-        return name
+        return train_mse
 
     def apply_window(self, window_size, data_type, model_names=None):
 
@@ -217,7 +214,7 @@ class regression(base_ff):
 
         return np.array(new_data)
 
-    def create_prediction(X, kernel):
+    def create_prediction(self, X, kernel):
 
         X = torch.tensor(np.expand_dims(X, axis=(0, 1))).float()
         kernel = torch.tensor(np.expand_dims(kernel, axis=(0, 1))).float()
@@ -225,7 +222,7 @@ class regression(base_ff):
         X.to(device)
         kernel.to(device)
 
-        result = F.conv2d(X, kernel, stride=1, padding=0)
+        result = F.conv2d(X, kernel)
         return result.numpy().squeeze().astype("f")
 
     @staticmethod
