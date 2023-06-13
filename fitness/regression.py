@@ -30,7 +30,32 @@ class regression(base_ff):
         # dummyfit.maximise = False
         # self.fitness_functions = [dummyfit, dummyfit]
         # self.default_fitness = [float('nan'), float('nan')]
-        self.load_data()
+
+        self.split_type_index = {"arima": 2, "sarima": 1}
+        self.models_values_column = {
+            "arima": {
+                "series": 1,
+                "arima": 3,
+                "mlp": 4,
+                "svr": 5,
+                "rbf": 6,
+            },
+            "sarima": {
+                "series": 6,
+                "sarima": 2,
+                "mlp": 3,
+                "svr": 4,
+                "rbf": 5,
+            },
+        }
+
+        dataset_name = params["DATASET_NAME"]
+        print(f"DATASET_NAME: {dataset_name}")
+        self.arima_dataset = self.load_data(
+            params["DATASET_NAME"], params["ARIMA_DATASET_PATH"], "arima")
+
+        self.sarima_dataset = self.load_data(
+            params["DATASET_NAME"], params["SARIMA_DATASET_PATH"], "sarima")
 
     def get_metrics(self, phenotype):
 
@@ -62,12 +87,12 @@ class regression(base_ff):
         }
         requests.post(params['METRICS_URL'], json=data)
 
-    def load_data(self):
-        print(f"DATASET_NAME: {params['DATASET_NAME']}")
-        wb = load_workbook(params['DATASET_PATH'])
-        dataset_name = [params["DATASET_NAME"]]
+    def load_data(self, dataset_name, dataset_path, linear_type):
+        wb = load_workbook(dataset_path)
+        dataset_name_arr = [dataset_name]
+
         dataset = {}
-        for name in dataset_name:
+        for name in dataset_name_arr:
 
             ws = wb[name]
             columns = [ws["A"], ws["B"], ws["C"],
@@ -87,37 +112,34 @@ class regression(base_ff):
 
             dataset[name]["series"] = {
                 "treino": [], "teste": [], "validacao": []}
-            dataset[name]["arima"] = {
+            dataset[name][linear_type] = {
                 "treino": [], "teste": [], "validacao": []}
             dataset[name]["mlp"] = {"treino": [], "teste": [], "validacao": []}
             dataset[name]["svr"] = {"treino": [], "teste": [], "validacao": []}
             dataset[name]["rbf"] = {"treino": [], "teste": [], "validacao": []}
 
             for row in sheet[1:]:
-                split_type = row[2]
-                if row[4] == None:
+                split_type = row[self.split_type_index[linear_type]]
+                if linear_type == "arima" and row[4] == None:
                     continue
                 key = None
-                if split_type == "Teste":
+                if split_type.lower() == "teste":
                     key = "teste"
-                elif split_type == "Validacao":
+                elif split_type.lower() == "validacao" or split_type.lower() == "validação":
                     key = "validacao"
-                elif split_type == "Treinamento":
+                elif split_type.lower() == "treinamento":
                     key = "treino"
                 else:
                     continue
 
-                dataset[name]["series"][key].append(float(row[1]))
-                dataset[name]["arima"][key] .append(float(row[3]))
-                dataset[name]["mlp"][key]   .append(float(row[4]))
-                dataset[name]["svr"][key]   .append(float(row[5]))
-                dataset[name]["rbf"][key]   .append(float(row[6]))
+                for model_key, val in self.models_values_column[linear_type].items():
+                    dataset[name][model_key][key].append(float(row[val]))
 
             for type_data in ["teste", "treino", "validacao"]:
                 dataset[name]["series"][type_data] = np.array(
                     dataset[name]["series"][type_data])
-                dataset[name]["arima"][type_data] = np.array(
-                    dataset[name]["arima"][type_data])
+                dataset[name][linear_type][type_data] = np.array(
+                    dataset[name][linear_type][type_data])
                 dataset[name]["mlp"][type_data] = np.array(
                     dataset[name]["mlp"][type_data])
                 dataset[name]["svr"][type_data] = np.array(
@@ -137,45 +159,59 @@ class regression(base_ff):
                     reference, dataset[name]["svr"][type_data])
                 dataset[name]["rbf"][type_data] = fixExtreme(
                     reference, dataset[name]["rbf"][type_data])
-                dataset[name]["arima"][type_data] = fixExtreme(
-                    reference, dataset[name]["arima"][type_data])
+                dataset[name][linear_type][type_data] = fixExtreme(
+                    reference, dataset[name][linear_type][type_data])
 
-        self.dataset = dataset[params['DATASET_NAME']]
+        return dataset[dataset_name]
 
     def build_model(self, phenotype):
         model = {"linear": {}, "nlinear": {}}
 
         linear, nlinear = phenotype.split(';')
 
-        weight, linear_model = linear.split(':')
-        model["linear"][linear_model] = float(weight)
+        weight_tuple, linear_model = linear.split(':')
+
+        weight_values = weight_tuple.removeprefix('(').removesuffix(')')
+        model["linear"][linear_model] = [
+            float(x) for x in weight_values.split(' ')]
 
         nlinear_parts = nlinear.split(',')
 
         for i in range(len(nlinear_parts)):
-            weight, nlinear_model = nlinear_parts[i].split(':')
+            weight_tuple, nlinear_model = nlinear_parts[i].split(':')
+            weight_values = weight_tuple.removeprefix('(').removesuffix(')')
 
             if nlinear_model in model["nlinear"]:
-                model["nlinear"][nlinear_model] += float(weight)
+                model["nlinear"][nlinear_model] += [
+                    float(x) for x in weight_values.split(' ')]
             else:
-                model["nlinear"][nlinear_model] = float(weight)
+                model["nlinear"][nlinear_model] = [
+                    float(x) for x in weight_values.split(' ')]
 
         return model
 
-    def predict_mse(self, model, series_name):
-        predict = self.dataset["series"]["treino"]
+    def predict_mse(self, model, split):
 
-        window_size = 1
+        if "arima" in model["linear"].keys():
+            dataset = self.arima_dataset
+            linear_type = "arima"
+        else:
+            dataset = self.sarima_dataset
+            linear_type = "sarima"
+
+        predict = dataset["series"][split]
+
+        window_size = params["WINDOW_SIZE"]
         X_train = self.apply_window(
-            window_size, "treino", model_names=model["nlinear"].keys())
+            window_size, split, linear_type, dataset, model_names=model["nlinear"].keys())
 
         kernel = []
-        for _ in range(window_size):
+        for i in range(window_size):
             for _, val in model["linear"].items():
-                kernel.append(val)
+                kernel.append(val[i])
 
             for _, val in model["nlinear"].items():
-                kernel.append(val)
+                kernel.append(val[i])
 
         return mse(self.create_prediction(X_train, np.reshape(kernel, (1, -1))), predict)
 
@@ -191,19 +227,19 @@ class regression(base_ff):
 
         return train_mse
 
-    def apply_window(self, window_size, data_type, model_names=None):
+    def apply_window(self, window_size, data_type, linear_type, dataset, model_names=None):
 
-        size_pred = len(self.dataset["series"][data_type])
+        size_pred = len(dataset["series"][data_type])
         new_data = []
 
         for w in range(window_size):
             linear = np.concatenate(
-                [np.zeros(w), self.dataset["arima"][data_type]])
+                [np.zeros(w), dataset[linear_type][data_type]])
             linear = linear[:size_pred]
             row = np.array(linear)
             for model_name in model_names:
                 nonlinear = np.concatenate(
-                    [np.zeros(w), self.dataset[model_name][data_type]])
+                    [np.zeros(w), dataset[model_name][data_type]])
                 nonlinear = nonlinear[:size_pred]
                 row = np.column_stack([row, nonlinear])
 

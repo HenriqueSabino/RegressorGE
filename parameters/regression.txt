@@ -13,5 +13,7 @@ MUTATE_DUPLICATES       True
 MULTICORE               True
 TOURNAMENT_SIZE:        2
 REPLACEMENT:            generational
-DATASET_PATH:           ../../datasets/data.xlsx
+ARIMA_DATASET_PATH:     ../../datasets/arima_data.xlsx
+SARIMA_DATASET_PATH:    ../../datasets/sarima_data.xlsx
+WINDOW_SIZE:            5
 DATASET_NAME:           B1H
