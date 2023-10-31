@@ -165,9 +165,12 @@ class regression(base_ff):
         return dataset[dataset_name]
 
     def build_model(self, phenotype):
-        model = {"linear": {}, "nlinear": {}}
+        model = {"window_size": 0, "linear": {}, "nlinear": {}}
 
-        linear, nlinear = phenotype.split(';')
+        window_size, model_phenotype = phenotype.split('~')
+        model["window_size"] = int(window_size)
+
+        linear, nlinear = model_phenotype.split(';')
 
         weight_tuple, linear_model = linear.split(':')
 
@@ -201,7 +204,7 @@ class regression(base_ff):
 
         predict = dataset["series"][split]
 
-        window_size = params["WINDOW_SIZE"]
+        window_size = model["window_size"]
         X_train = self.apply_window(
             window_size, split, linear_type, dataset, model_names=model["nlinear"].keys())
 

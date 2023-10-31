@@ -2,11 +2,11 @@ GRAMMAR_FILE:           ../../grammars/regressors.bnf
 FITNESS_FUNCTION:       regression
 INITIALISATION:         uniform_genome
 GENERATIONS:            600
-POPULATION_SIZE:        400
+POPULATION_SIZE:        40
 CROSSOVER_PROBABILITY:  0.75
-MUTATION:               int_flip_per_codon
-MUTATION_PROBABILITY:   0.1
-ELITE_SIZE:  		    1
+MUTATION:               subtree
+MUTATION_EVENTS         1
+ELITE_SIZE:  		    8
 SELECTION:              tournament
 CACHE                   True
 MUTATE_DUPLICATES       True
@@ -15,5 +15,4 @@ TOURNAMENT_SIZE:        2
 REPLACEMENT:            generational
 ARIMA_DATASET_PATH:     ../../datasets/arima_data.xlsx
 SARIMA_DATASET_PATH:    ../../datasets/sarima_data.xlsx
-WINDOW_SIZE:            5
-DATASET_NAME:           B1H
+DATASET_NAME:           CARSALES

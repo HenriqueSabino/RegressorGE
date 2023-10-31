@@ -1,7 +1,7 @@
-<rede> ::= <tuple>:<linear_model>;<tuple>:<nlinear_model> | <rede>,<tuple>:<nlinear_model>
+<rede> ::= <window_size>~<tuple>:<linear_model>;<tuple>:<nlinear_model> | <window_size>~<tuple>:<linear_model>;<tuple>:<nlinear_model>,<tuple>:<nlinear_model> | <window_size>~<tuple>:<linear_model>;<tuple>:<nlinear_model>,<tuple>:<nlinear_model>,<tuple>:<nlinear_model>
 <linear_model> ::= arima | sarima
 <nlinear_model> ::= svr | mlp | rbf
 <tuple> ::= (<float> <float> <float> <float> <float> <float> <float> <float> <float> <float>)
-<float> ::= <number> | <number>.<number>
-<number> ::= <digit> | <digit><number>
+<window_size> ::= 1|2|3|4|5|6|7|8|9|10
+<float> ::= <digit><digit>.<digit><digit><digit><digit><digit>
 <digit> ::= 0|1|2|3|4|5|6|7|8|9
