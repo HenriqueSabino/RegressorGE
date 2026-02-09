@@ -1,0 +1,14 @@
+method,mean_rank,rank_difference,significant,better_than_baseline
+ARIMA + SVR,3.85,0.8500000000000001,False,False
+SARIMA + SVR,4.5,1.5,False,False
+SARIMA + MLP,6.6,3.5999999999999996,False,False
+ARIMA + MLP,6.9,3.9000000000000004,False,False
+Babu,7.1,4.1,False,False
+Oliveira2,7.15,4.15,False,False
+ARIMA,7.75,4.75,False,False
+SARIMA,8.25,5.25,False,False
+Oliveira,8.25,5.25,False,False
+ARIMA + RBF,8.85,5.85,False,False
+SARIMA + RBF,9.6,6.6,True,False
+LSTM,10.3,7.300000000000001,True,False
+CNN,12.9,9.9,True,False

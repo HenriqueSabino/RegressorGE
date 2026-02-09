@@ -15,4 +15,4 @@ TOURNAMENT_SIZE:        2
 REPLACEMENT:            generational
 ARIMA_DATASET_PATH:     ../../datasets/arima_data.xlsx
 SARIMA_DATASET_PATH:    ../../datasets/sarima_data.xlsx
-DATASET_NAME:           CARSALES
+DATASET_NAME:           B1H
