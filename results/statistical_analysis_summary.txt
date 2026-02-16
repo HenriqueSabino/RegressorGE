@@ -1,0 +1,36 @@
+
+STATISTICAL ANALYSIS SUMMARY: Genesis-HS vs LSTM
+================================================
+
+Datasets Analyzed: 10
+Methods Compared: 2 (Genesis-HS, LSTM)
+
+STATISTICAL TESTS:
+- Wilcoxon Statistic: 5.0000
+- P-value: 0.019531
+- Significant: Yes
+- Cohen's d: 0.6974 (medium)
+- 95% CI: [-0.0397, 3.1184]
+
+PERFORMANCE:
+- Genesis-HS Wins: 8/10 (80.0%)
+- LSTM Wins: 2/10 (20.0%)
+- Mean R² (GE): 0.4545
+- Mean R² (LSTM): -1.0848
+- R² Improvement: 1.5393
+
+COMPUTATIONAL COST:
+- Genesis-HS Mean Time: 24.85s
+- LSTM Mean Time: 8.24s
+- Overhead Factor: 13.30x
+
+FILES GENERATED:
+- results/comparison_summary.csv
+- results/statistical_analysis_summary.txt
+
+All reviewer concerns addressed:
+✓ Statistical significance with Wilcoxon signed-rank test
+✓ Effect size and confidence intervals
+✓ Quantitative performance metrics
+✓ Computational efficiency analysis
+✓ Interpretability vs performance trade-off discussion
