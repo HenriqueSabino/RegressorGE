@@ -1,36 +1,28 @@
 
-STATISTICAL ANALYSIS SUMMARY: Genesis-HS vs LSTM
-================================================
+STATISTICAL ANALYSIS SUMMARY: Genesis-HS vs 5 Methods
+======================================================
+Methods compared : 6
+Datasets analyzed: 10
+Runs per config  : 15
 
-Datasets Analyzed: 10
-Methods Compared: 2 (Genesis-HS, LSTM)
+FRIEDMAN TEST:
+  Chi² = 21.0920,  p = 0.000778
+  Significant: Yes
 
-STATISTICAL TESTS:
-- Wilcoxon Statistic: 5.0000
-- P-value: 0.019531
-- Significant: Yes
-- Cohen's d: 0.6974 (medium)
-- 95% CI: [-0.0397, 3.1184]
+MEAN RANKS:
+  Genesis-HS: 2.3000
+  SARIMA+MLP: 2.3000
+  ARIMA+MLP: 2.6000
+  ARIMA+SVR: 4.5000
+  SARIMA+SVR: 4.6000
+  LSTM: 4.7000
 
-PERFORMANCE:
-- Genesis-HS Wins: 8/10 (80.0%)
-- LSTM Wins: 2/10 (20.0%)
-- Mean R² (GE): 0.4545
-- Mean R² (LSTM): -1.0848
-- R² Improvement: 1.5393
+NEMENYI POST-HOC (Genesis-HS vs each):
+  vs LSTM: p=0.0474
+  vs ARIMA+SVR: p=0.0902
+  vs ARIMA+MLP: p=0.9992
+  vs SARIMA+SVR: p=0.0660
+  vs SARIMA+MLP: p=1.0000
 
-COMPUTATIONAL COST:
-- Genesis-HS Mean Time: 24.85s
-- LSTM Mean Time: 8.24s
-- Overhead Factor: 13.30x
-
-FILES GENERATED:
-- results/comparison_summary.csv
-- results/statistical_analysis_summary.txt
-
-All reviewer concerns addressed:
-✓ Statistical significance with Wilcoxon signed-rank test
-✓ Effect size and confidence intervals
-✓ Quantitative performance metrics
-✓ Computational efficiency analysis
-✓ Interpretability vs performance trade-off discussion
+WILCOXON (GE vs LSTM, supplementary):
+  W=5.0000, p=0.019531, Cohen_d=0.6974 (medium)
