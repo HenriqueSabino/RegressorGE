@@ -1,28 +1,28 @@
 
-STATISTICAL ANALYSIS SUMMARY: Genesis-HS vs 5 Methods
-======================================================
+STATISTICAL ANALYSIS SUMMARY: Genesis-HS vs 5 Methods (Primary metric: MSE)
+================================================================================
 Methods compared : 6
 Datasets analyzed: 10
 Runs per config  : 15
 
 FRIEDMAN TEST:
-  Chi² = 21.0920,  p = 0.000778
+  Chi² = 18.9080,  p = 0.001999
   Significant: Yes
 
 MEAN RANKS:
-  Genesis-HS: 2.3000
-  SARIMA+MLP: 2.3000
-  ARIMA+MLP: 2.6000
-  ARIMA+SVR: 4.5000
-  SARIMA+SVR: 4.6000
+  SARIMA+MLP: 2.2000
+  ARIMA+MLP: 2.5000
+  Genesis-HS: 2.7000
+  ARIMA+SVR: 4.4000
+  SARIMA+SVR: 4.5000
   LSTM: 4.7000
 
 NEMENYI POST-HOC (Genesis-HS vs each):
-  vs LSTM: p=0.0474
-  vs ARIMA+SVR: p=0.0902
-  vs ARIMA+MLP: p=0.9992
-  vs SARIMA+SVR: p=0.0660
-  vs SARIMA+MLP: p=1.0000
+  vs LSTM: p=0.1594
+  vs ARIMA+SVR: p=0.3241
+  vs ARIMA+MLP: p=0.9999
+  vs SARIMA+SVR: p=0.2610
+  vs SARIMA+MLP: p=0.9912
 
 WILCOXON (GE vs LSTM, supplementary):
-  W=5.0000, p=0.019531, Cohen_d=0.6974 (medium)
+  W=7.0000, p=0.037109, Cohen_d=0.6963 (medium)
