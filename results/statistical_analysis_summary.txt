@@ -6,23 +6,23 @@ Datasets analyzed: 10
 Runs per config  : 30
 
 FRIEDMAN TEST:
-  Chi² = 17.9971,  p = 0.002950
+  Chi² = 19.2939,  p = 0.001694
   Significant: Yes
 
 MEAN RANKS:
   SARIMA+MLP: 1.9000
-  ARIMA+MLP: 2.4500
+  ARIMA+MLP: 2.3500
   Genesis-HS: 3.4000
   ARIMA+SVR: 4.3000
   SARIMA+SVR: 4.3500
-  LSTM: 4.6000
+  LSTM: 4.7000
 
 NEMENYI POST-HOC (Genesis-HS vs each):
-  vs LSTM: p=0.7060
+  vs LSTM: p=0.6292
   vs ARIMA+SVR: p=0.8912
-  vs ARIMA+MLP: p=0.8667
+  vs ARIMA+MLP: p=0.8094
   vs SARIMA+SVR: p=0.8667
   vs SARIMA+MLP: p=0.4703
 
 WILCOXON (GE vs LSTM, supplementary):
-  W=15.0000, p=0.232422, Cohen_d=0.4624 (small)
+  W=8.0000, p=0.048828, Cohen_d=0.5960 (medium)

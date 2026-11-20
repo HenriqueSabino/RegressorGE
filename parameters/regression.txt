@@ -1,8 +1,8 @@
 GRAMMAR_FILE:           ../../grammars/regressors.bnf
 FITNESS_FUNCTION:       regression
 INITIALISATION:         PI_grow
-GENERATIONS:            200
-POPULATION_SIZE:        100
+GENERATIONS:            600
+POPULATION_SIZE:        40
 MAX_INIT_TREE_DEPTH     10
 MAX_TREE_DEPTH          17
 CODON_SIZE              100000
